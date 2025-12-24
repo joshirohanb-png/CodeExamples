@@ -1,2 +1,2 @@
 # CodeExamples
-Biostatistics-related coding examples. 
+Biostatistics-related coding examples in R and SAS. 
