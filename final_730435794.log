@@ -1,0 +1,1146 @@
+NOTE: PROCEDURE PRINTTO used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+72         
+73         /*****************************************************************************
+74          * BIOS 511 Final
+75          * Program: final_730435794.sas
+76          * Author: Rohan Joshi
+77          * Date: 12-05-2025
+78          ****************************************************************************/
+79         
+80         %put %upcase(no)TE: Program being run by 730435794;
+NOTE: Program being run by 730435794
+81         options nofullstimer;
+82         libname data "~/my_shared_file_links/klh52250/BIOS511/data" access=readonly;
+NOTE: Libref DATA was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: /home/u64303804/my_shared_file_links/klh52250/BIOS511/data
+83         
+84         ods pdf file="/home/u64303804/BIOS511/Output/final_730435794.pdf" style=journal;
+85         
+86         /*--------------------------*
+87          | #1 Import Monkeypox file |
+88          *--------------------------*/
+89         proc import datafile="~/my_shared_file_links/klh52250/BIOS511/data/Monkeypox_Research.csv"
+90             out=monkeypox dbms=csv replace;
+91             getnames=yes;
+92             guessingrows=max;
+93         run;
+
+NOTE: Unable to open parameter catalog: SASUSER.PARMS.PARMS.SLIST in update mode. Temporary parameter values will be saved to 
+WORK.PARMS.PARMS.SLIST.
+94          /**********************************************************************
+95          *   PRODUCT:   SAS
+96          *   VERSION:   9.4
+97          *   CREATOR:   External File Interface
+98          *   DATE:      05DEC25
+99          *   DESC:      Generated SAS Datastep Code
+100         *   TEMPLATE SOURCE:  (None Specified.)
+101         ***********************************************************************/
+102            data WORK.MONKEYPOX    ;
+103            %let _EFIERR_ = 0; /* set the ERROR detection macro variable */
+104            infile '~/my_shared_file_links/klh52250/BIOS511/data/Monkeypox_Research.csv' delimiter = ',' MISSOVER DSD lrecl=32767
+104      !  firstobs=2 ;
+105               informat Activity $54. ;
+106               informat Topic best32. ;
+107               informat Agency $9. ;
+108               informat Location $32. ;
+109               informat Status $29. ;
+110               format Activity $54. ;
+2                                                          The SAS System                      Friday, December  5, 2025 05:20:07 PM
+
+111               format Topic best12. ;
+112               format Agency $9. ;
+113               format Location $32. ;
+114               format Status $29. ;
+115            input
+116                        Activity  $
+117                        Topic
+118                        Agency  $
+119                        Location  $
+120                        Status  $
+121            ;
+122            if _ERROR_ then call symputx('_EFIERR_',1);  /* set ERROR detection macro variable */
+123            run;
+
+NOTE: The infile '~/my_shared_file_links/klh52250/BIOS511/data/Monkeypox_Research.csv' is:
+      Filename=/home/u64303804/my_shared_file_links/klh52250/BIOS511/data/Monkeypox_Research.csv,
+      Owner Name=klh52250,Group Name=nobody,
+      Access Permission=-rw-r--r--,
+      Last Modified=17Aug2025:21:12:31,
+      File Size (bytes)=4088
+
+NOTE: 71 records were read from the infile '~/my_shared_file_links/klh52250/BIOS511/data/Monkeypox_Research.csv'.
+      The minimum record length was 38.
+      The maximum record length was 92.
+NOTE: The data set WORK.MONKEYPOX has 71 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+71 rows created in WORK.MONKEYPOX from ~/my_shared_file_links/klh52250/BIOS511/data/Monkeypox_Research.csv.
+  
+  
+  
+NOTE: WORK.MONKEYPOX data set was successfully created.
+NOTE: The data set WORK.MONKEYPOX has 71 observations and 5 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.05 seconds
+      
+
+124        
+125        /*----------------------*
+126         | #2 Topic FORMAT      |
+127         *----------------------*/
+128        proc format;
+129            value topicf
+130                1="Vaccine"
+131                2="Therapeutic"
+132                3="Diagnostic"
+133                4="Lab Safety"
+134                5="Epidemiology"
+135                6="Education"
+136                7="Outreach"
+137                other="Unknown";
+NOTE: Format TOPICF is already on the library WORK.FORMATS.
+NOTE: Format TOPICF has been output.
+138        run;
+3                                                          The SAS System                      Friday, December  5, 2025 05:20:07 PM
+
+
+NOTE: PROCEDURE FORMAT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+139        
+140        /*----------------------*
+141         | #3 FREQ agency*topic |
+142         *----------------------*/
+143        ods noproctitle;
+144        proc freq data=monkeypox;
+145            tables agency*topic / list missing;
+146            format topic topicf.;
+147        run;
+
+NOTE: There were 71 observations read from the data set WORK.MONKEYPOX.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.05 seconds
+      
+
+148        
+149        
+150        
+151        
+152        
+153        
+154        
+155        
+156        
+157        /*----------------------*
+158         | #4 Gulf Oil Ratios   |
+159         *----------------------*/
+160        /*----------------------*
+161         | #4 Gulf Oil Ratios   |
+162         *----------------------*/
+163        proc sort data=sashelp.gulfoil out=gulf_sorted;
+164            by regionname protractionname date;
+165        run;
+
+NOTE: There were 3760 observations read from the data set SASHELP.GULFOIL.
+NOTE: The data set WORK.GULF_SORTED has 3760 observations and 5 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+166        
+167        data gulf_ratios;
+168            set gulf_sorted;
+169            by regionname protractionname;
+170        
+171            retain firstoil firstgas;
+172        
+173            /* First month of each protraction */
+174            if first.protractionname then do;
+175                firstoil = oil;
+4                                                          The SAS System                      Friday, December  5, 2025 05:20:07 PM
+
+176                firstgas = gas;
+177            end;
+178        
+179            /* Last month of each protraction */
+180            if last.protractionname then do;
+181                lastoil = oil;
+182                lastgas = gas;
+183        
+184                ratio_oil = ifn(lastoil > 0, firstoil / lastoil, .);
+185                ratio_gas = ifn(lastgas > 0, firstgas / lastgas, .);
+186        
+187                output;
+188            end;
+189        
+190            keep regionname protractionname firstoil lastoil firstgas lastgas ratio_oil ratio_gas;
+191        run;
+
+NOTE: Division by zero detected at line 184 column 47.
+regionname=Central protractionname=Chandeleur Area date=MAR2006 oil=0 gas=191,359 FIRST.regionname=0 LAST.regionname=0
+FIRST.protractionname=0 LAST.protractionname=1 firstoil=64 firstgas=994942 lastoil=0 lastgas=191359 ratio_oil=.
+ratio_gas=5.1993478227 _ERROR_=1 _N_=368
+NOTE: Division by zero detected at line 184 column 47.
+regionname=Western protractionname=South Padre Island Area date=MAR2006 oil=0 gas=749,040 FIRST.regionname=0 LAST.regionname=1
+FIRST.protractionname=0 LAST.protractionname=1 firstoil=0 firstgas=484309 lastoil=0 lastgas=749040 ratio_oil=.
+ratio_gas=0.6465729467 _ERROR_=1 _N_=3760
+NOTE: Mathematical operations could not be performed at the following places. The results of the operations have been set to 
+      missing values.
+      Each place is given by: (Number of times) at (Line):(Column).
+      2 at 184:47   
+NOTE: There were 3760 observations read from the data set WORK.GULF_SORTED.
+NOTE: The data set WORK.GULF_RATIOS has 32 observations and 8 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+192        
+193        proc print data=gulf_ratios label;
+194            label regionname="Region"
+195                  protractionname="Protraction"
+196                  firstoil="First Oil"
+197                  lastoil="Last Oil"
+198                  firstgas="First Gas"
+199                  lastgas="Last Gas"
+200                  ratio_oil="Oil Ratio"
+201                  ratio_gas="Gas Ratio";
+202        run;
+
+NOTE: There were 32 observations read from the data set WORK.GULF_RATIOS.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.05 seconds
+      
+
+203        
+204        
+205        
+206        
+5                                                          The SAS System                      Friday, December  5, 2025 05:20:07 PM
+
+207        
+208        
+209        
+210        
+211        
+212        
+213        
+214        
+215        /*----------------------*
+216         | #5 Print Gulf Ratios |
+217         *----------------------*/
+218        proc print data=gulf_ratios label;
+219        run;
+
+NOTE: There were 32 observations read from the data set WORK.GULF_RATIOS.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.04 seconds
+      
+
+220        
+221        /*--------------------------*
+222         | #6 Boxplot diabetes data |
+223         *--------------------------*/
+224        proc sgplot data=data.diabetes;
+225            hbox glyhb / category=gender group=frame;
+226            label gender="Gender" frame="Body Frame";
+227            footnote "Glycosylated Hemoglobin by Gender and Body Frame";
+228        run;
+
+NOTE: PROCEDURE SGPLOT used (Total process time):
+      real time           0.15 seconds
+      cpu time            0.07 seconds
+      
+NOTE: There were 403 observations read from the data set DATA.DIABETES.
+
+229        
+230        /*--------------------------*
+231         | #7 Clear footnote        |
+232         *--------------------------*/
+233        footnote;
+234        
+235        /*--------------------------*
+236         | #8 Format for sex        |
+237         *--------------------------*/
+238        proc format;
+239            value sexf
+240                1="Male"
+241                0="Female";
+NOTE: Format SEXF is already on the library WORK.FORMATS.
+NOTE: Format SEXF has been output.
+242        run;
+
+NOTE: PROCEDURE FORMAT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+6                                                          The SAS System                      Friday, December  5, 2025 05:20:07 PM
+
+243        
+244        /*--------------------------*
+245         | #9 Means on preemies     |
+246         *--------------------------*/
+247        proc means data=data.preemies noprint nway;
+NOTE: Data file DATA.PREEMIES.DATA is in a format that is native to another host, or the file encoding does not match the session 
+      encoding. Cross Environment Data Access will be used, which might require additional CPU resources and might reduce 
+      performance.
+248            class sex;
+249            var bw;
+250            format sex sexf.;
+251            output out=prem_stats mean=mean_bw;
+252        run;
+
+NOTE: There were 30 observations read from the data set DATA.PREEMIES.
+NOTE: The data set WORK.PREM_STATS has 2 observations and 4 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+253        
+254        /*--------------------------*
+255         | #10 Transpose            |
+256         *--------------------------*/
+257        proc transpose data=prem_stats out=prem_t(drop=_name_);
+258            id sex;
+259            var mean_bw;
+260        run;
+
+NOTE: There were 2 observations read from the data set WORK.PREM_STATS.
+NOTE: The data set WORK.PREM_T has 1 observations and 2 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+261        
+262        /*--------------------------*
+263         | #11 Print transposed     |
+264         *--------------------------*/
+265        proc print data=prem_t noobs;
+266        run;
+
+NOTE: There were 1 observations read from the data set WORK.PREM_T.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+267        
+268        /*--------------------------*
+269         | #12 Merge DIM + FACT     |
+270         *--------------------------*/
+271        proc sort data=data.customer_dim out=customer_dim_sorted;
+272            by customer_id;
+273        run;
+
+7                                                          The SAS System                      Friday, December  5, 2025 05:20:07 PM
+
+NOTE: There were 77 observations read from the data set DATA.CUSTOMER_DIM.
+NOTE: The data set WORK.CUSTOMER_DIM_SORTED has 77 observations and 11 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+274        
+275        proc sort data=data.order_fact out=order_fact_sorted;
+276            by customer_id;
+277        run;
+
+NOTE: There were 617 observations read from the data set DATA.ORDER_FACT.
+NOTE: The data set WORK.ORDER_FACT_SORTED has 617 observations and 12 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+278        
+279        data merged;
+280            merge customer_dim_sorted(in=a)
+281                  order_fact_sorted(in=b);
+282            by customer_id;
+283            if a and b;
+284        run;
+
+NOTE: There were 77 observations read from the data set WORK.CUSTOMER_DIM_SORTED.
+NOTE: There were 617 observations read from the data set WORK.ORDER_FACT_SORTED.
+NOTE: The data set WORK.MERGED has 617 observations and 22 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+285        
+286        /*--------------------------*
+287         | #13 Macro country report |
+288         *--------------------------*/
+289        %macro countryrep(country=, minval=);
+290        
+291            data &country;
+292                set merged;
+293                where customer_country="&country";
+294                flag = (total_retail_price > &minval);
+295                days = delivery_date - order_date;
+296            run;
+297        
+298            title "Country = &country";
+299        
+300            proc report data=&country nowd;
+301                column flag days quantity total_retail_price;
+302                define flag / group "Minimum Value";
+303                define days / group "Days to Delivery";
+304                define quantity / "Quantity";
+305                define total_retail_price / mean "Mean Price";
+306            run;
+307        
+8                                                          The SAS System                      Friday, December  5, 2025 05:20:07 PM
+
+308            title;
+309        
+310        %mend;
+311        
+312        /*--------------------------*
+313         | #14 Execute macro        |
+314         *--------------------------*/
+315        options mprint;
+316        %countryrep(country=DE, minval=75);
+MPRINT(COUNTRYREP):   data DE;
+MPRINT(COUNTRYREP):   set merged;
+MPRINT(COUNTRYREP):   where customer_country="DE";
+MPRINT(COUNTRYREP):   flag = (total_retail_price > 75);
+MPRINT(COUNTRYREP):   days = delivery_date - order_date;
+MPRINT(COUNTRYREP):   run;
+
+NOTE: There were 58 observations read from the data set WORK.MERGED.
+      WHERE customer_country='DE';
+NOTE: The data set WORK.DE has 58 observations and 24 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(COUNTRYREP):   title "Country = DE";
+MPRINT(COUNTRYREP):   proc report data=DE nowd;
+MPRINT(COUNTRYREP):   column flag days quantity total_retail_price;
+MPRINT(COUNTRYREP):   define flag / group "Minimum Value";
+MPRINT(COUNTRYREP):   define days / group "Days to Delivery";
+MPRINT(COUNTRYREP):   define quantity / "Quantity";
+MPRINT(COUNTRYREP):   define total_retail_price / mean "Mean Price";
+MPRINT(COUNTRYREP):   run;
+
+NOTE: There were 58 observations read from the data set WORK.DE.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+MPRINT(COUNTRYREP):   title;
+317        %countryrep(country=AU, minval=200);
+MPRINT(COUNTRYREP):   data AU;
+MPRINT(COUNTRYREP):   set merged;
+MPRINT(COUNTRYREP):   where customer_country="AU";
+MPRINT(COUNTRYREP):   flag = (total_retail_price > 200);
+MPRINT(COUNTRYREP):   days = delivery_date - order_date;
+MPRINT(COUNTRYREP):   run;
+
+NOTE: There were 129 observations read from the data set WORK.MERGED.
+      WHERE customer_country='AU';
+NOTE: The data set WORK.AU has 129 observations and 24 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(COUNTRYREP):   title "Country = AU";
+MPRINT(COUNTRYREP):   proc report data=AU nowd;
+9                                                          The SAS System                      Friday, December  5, 2025 05:20:07 PM
+
+MPRINT(COUNTRYREP):   column flag days quantity total_retail_price;
+MPRINT(COUNTRYREP):   define flag / group "Minimum Value";
+MPRINT(COUNTRYREP):   define days / group "Days to Delivery";
+MPRINT(COUNTRYREP):   define quantity / "Quantity";
+MPRINT(COUNTRYREP):   define total_retail_price / mean "Mean Price";
+MPRINT(COUNTRYREP):   run;
+
+NOTE: There were 129 observations read from the data set WORK.AU.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.02 seconds
+      
+
+MPRINT(COUNTRYREP):   title;
+318        %countryrep(country=IL, minval=150);
+MPRINT(COUNTRYREP):   data IL;
+MPRINT(COUNTRYREP):   set merged;
+MPRINT(COUNTRYREP):   where customer_country="IL";
+MPRINT(COUNTRYREP):   flag = (total_retail_price > 150);
+MPRINT(COUNTRYREP):   days = delivery_date - order_date;
+MPRINT(COUNTRYREP):   run;
+
+NOTE: There were 19 observations read from the data set WORK.MERGED.
+      WHERE customer_country='IL';
+NOTE: The data set WORK.IL has 19 observations and 24 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(COUNTRYREP):   title "Country = IL";
+MPRINT(COUNTRYREP):   proc report data=IL nowd;
+MPRINT(COUNTRYREP):   column flag days quantity total_retail_price;
+MPRINT(COUNTRYREP):   define flag / group "Minimum Value";
+MPRINT(COUNTRYREP):   define days / group "Days to Delivery";
+MPRINT(COUNTRYREP):   define quantity / "Quantity";
+MPRINT(COUNTRYREP):   define total_retail_price / mean "Mean Price";
+MPRINT(COUNTRYREP):   run;
+
+NOTE: There were 19 observations read from the data set WORK.IL.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.03 seconds
+      
+
+MPRINT(COUNTRYREP):   title;
+319        
+320        /*--------------------------*
+321         | #15 Fish transformations |
+322         *--------------------------*/
+323        
+324        data fish_edit;
+325            set sashelp.fish;
+326        
+327            /* shrink lengths */
+328            array lens {*} Length1 Length2 Length3;
+329            do i=1 to dim(lens);
+330                if lens{i} ne . then lens{i} = lens{i} * 0.95;
+10                                                         The SAS System                      Friday, December  5, 2025 05:20:07 PM
+
+331            end;
+332        
+333            /* height categories (based on real min/max) */
+334            if height = . then Hcat = "M";
+335            else if height < 13 then Hcat = "H1";
+336            else if 13 <= height < 15 then Hcat = "H2";
+337            else if 15 <= height < 17 then Hcat = "H3";
+338            else if height >= 17 then Hcat = "H4";
+339        
+340            /* weight categories (based on actual ranges) */
+341            if weight = . then Wcat = "M";
+342            else if weight < 400 then Wcat="W1";
+343            else if 400 <= weight < 600 then Wcat="W2";
+344            else if 600 <= weight < 800 then Wcat="W3";
+345            else if weight >= 800 then Wcat="W4";
+346        
+347            drop i;
+348        run;
+
+NOTE: There were 159 observations read from the data set SASHELP.FISH.
+NOTE: The data set WORK.FISH_EDIT has 159 observations and 9 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+349        
+350        proc sort data=fish_edit; by species; run;
+
+NOTE: There were 159 observations read from the data set WORK.FISH_EDIT.
+NOTE: The data set WORK.FISH_EDIT has 159 observations and 9 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+351        
+352        
+353        /*--------------------------*
+354         | #16 Univariate           |
+355         *--------------------------*/
+356        proc univariate data=fish_edit;
+357            where Hcat="H";
+358            by species;
+359            class Wcat;
+360            var Length1 Length2 Length3;
+361            ods select moments extremeobs;
+362        run;
+
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.40 seconds
+      cpu time            0.40 seconds
+      
+
+363        
+364        
+365        
+366        
+11                                                         The SAS System                      Friday, December  5, 2025 05:20:07 PM
+
+367        
+368        OPTIONS NONOTES NOSTIMER NOSOURCE NOSYNTAXCHECK;
+378        
+12                                                         The SAS System                      Friday, December  5, 2025 05:24:12 PM
+
+
+1                                                          The SAS System                      Friday, December  5, 2025 05:24:12 PM
+
+1          OPTIONS NONOTES NOSTIMER NOSOURCE NOSYNTAXCHECK;
+NOTE: ODS statements in the SAS Studio environment may disable some output features.
+69         
+70         /*****************************************************************************
+71          * BIOS 511 Final Exam
+72          * Program: final_730435794.sas
+73          * Author: Rohan Joshi
+74          * Date: 12-05-2025
+75          *****************************************************************************/
+76         
+77         %put NOTE: Program being run by 730435794;
+NOTE: Program being run by 730435794
+78         
+79         options nofullstimer;
+80         libname data "~/my_shared_file_links/klh52250/BIOS511/data" access=readonly;
+NOTE: Libref DATA was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: /home/u64303804/my_shared_file_links/klh52250/BIOS511/data
+81         
+82         ods pdf file="/home/u64303804/BIOS511/Output/final_730435794.pdf" style=journal;
+83         
+84         /*--------------------------*
+85          | #1 Import Monkeypox File |
+86          *--------------------------*/
+87         proc import datafile="~/my_shared_file_links/klh52250/BIOS511/data/Monkeypox_Research.csv"
+88             out=monkeypox dbms=csv replace;
+89             getnames=yes;
+90             guessingrows=max;
+91         run;
+
+NOTE: Unable to open parameter catalog: SASUSER.PARMS.PARMS.SLIST in update mode. Temporary parameter values will be saved to 
+WORK.PARMS.PARMS.SLIST.
+92          /**********************************************************************
+93          *   PRODUCT:   SAS
+94          *   VERSION:   9.4
+95          *   CREATOR:   External File Interface
+96          *   DATE:      05DEC25
+97          *   DESC:      Generated SAS Datastep Code
+98          *   TEMPLATE SOURCE:  (None Specified.)
+99          ***********************************************************************/
+100            data WORK.MONKEYPOX    ;
+101            %let _EFIERR_ = 0; /* set the ERROR detection macro variable */
+102            infile '~/my_shared_file_links/klh52250/BIOS511/data/Monkeypox_Research.csv' delimiter = ',' MISSOVER DSD lrecl=32767
+102      !  firstobs=2 ;
+103               informat Activity $54. ;
+104               informat Topic best32. ;
+105               informat Agency $9. ;
+106               informat Location $32. ;
+107               informat Status $29. ;
+108               format Activity $54. ;
+109               format Topic best12. ;
+110               format Agency $9. ;
+111               format Location $32. ;
+112               format Status $29. ;
+113            input
+114                        Activity  $
+115                        Topic
+116                        Agency  $
+2                                                          The SAS System                      Friday, December  5, 2025 05:24:12 PM
+
+117                        Location  $
+118                        Status  $
+119            ;
+120            if _ERROR_ then call symputx('_EFIERR_',1);  /* set ERROR detection macro variable */
+121            run;
+
+NOTE: The infile '~/my_shared_file_links/klh52250/BIOS511/data/Monkeypox_Research.csv' is:
+      Filename=/home/u64303804/my_shared_file_links/klh52250/BIOS511/data/Monkeypox_Research.csv,
+      Owner Name=klh52250,Group Name=nobody,
+      Access Permission=-rw-r--r--,
+      Last Modified=17Aug2025:21:12:31,
+      File Size (bytes)=4088
+
+NOTE: 71 records were read from the infile '~/my_shared_file_links/klh52250/BIOS511/data/Monkeypox_Research.csv'.
+      The minimum record length was 38.
+      The maximum record length was 92.
+NOTE: The data set WORK.MONKEYPOX has 71 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+71 rows created in WORK.MONKEYPOX from ~/my_shared_file_links/klh52250/BIOS511/data/Monkeypox_Research.csv.
+  
+  
+  
+NOTE: WORK.MONKEYPOX data set was successfully created.
+NOTE: The data set WORK.MONKEYPOX has 71 observations and 5 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.04 seconds
+      
+
+122        
+123        /*----------------------*
+124         | #2 Topic FORMAT      |
+125         *----------------------*/
+126        proc format;
+127            value topicf
+128                1="Vaccine"
+129                2="Therapeutic"
+130                3="Diagnostic"
+131                4="Lab Safety"
+132                5="Epidemiology"
+133                6="Education"
+134                7="Outreach"
+135                other="Unknown";
+NOTE: Format TOPICF is already on the library WORK.FORMATS.
+NOTE: Format TOPICF has been output.
+136        run;
+
+NOTE: PROCEDURE FORMAT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+137        
+138        /*----------------------*
+3                                                          The SAS System                      Friday, December  5, 2025 05:24:12 PM
+
+139         | #3 FREQ agency*topic |
+140         *----------------------*/
+141        ods noproctitle;
+142        proc freq data=monkeypox;
+143            tables agency*topic / list missing;
+144            format topic topicf.;
+145        run;
+
+NOTE: There were 71 observations read from the data set WORK.MONKEYPOX.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+
+146        
+147        /*----------------------*
+148         | #4 Gulf Oil Ratios   |
+149         *----------------------*/
+150        proc sort data=sashelp.gulfoil out=gulf_sorted;
+151            by regionname protractionname date;
+152        run;
+
+NOTE: There were 3760 observations read from the data set SASHELP.GULFOIL.
+NOTE: The data set WORK.GULF_SORTED has 3760 observations and 5 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+153        
+154        data gulf_ratios;
+155            set gulf_sorted;
+156            by regionname protractionname;
+157        
+158            retain firstoil firstgas;
+159        
+160            /* First month of each protraction */
+161            if first.protractionname then do;
+162                firstoil = oil;
+163                firstgas = gas;
+164            end;
+165        
+166            /* Last month of each protraction */
+167            if last.protractionname then do;
+168                lastoil = oil;
+169                lastgas = gas;
+170        
+171                ratio_oil = ifn(lastoil > 0, firstoil / lastoil, .);
+172                ratio_gas = ifn(lastgas > 0, firstgas / lastgas, .);
+173        
+174                output;
+175            end;
+176        
+177            keep regionname protractionname firstoil lastoil firstgas lastgas ratio_oil ratio_gas;
+178        run;
+
+NOTE: Division by zero detected at line 171 column 47.
+regionname=Central protractionname=Chandeleur Area date=MAR2006 oil=0 gas=191,359 FIRST.regionname=0 LAST.regionname=0
+4                                                          The SAS System                      Friday, December  5, 2025 05:24:12 PM
+
+FIRST.protractionname=0 LAST.protractionname=1 firstoil=64 firstgas=994942 lastoil=0 lastgas=191359 ratio_oil=.
+ratio_gas=5.1993478227 _ERROR_=1 _N_=368
+NOTE: Division by zero detected at line 171 column 47.
+regionname=Western protractionname=South Padre Island Area date=MAR2006 oil=0 gas=749,040 FIRST.regionname=0 LAST.regionname=1
+FIRST.protractionname=0 LAST.protractionname=1 firstoil=0 firstgas=484309 lastoil=0 lastgas=749040 ratio_oil=.
+ratio_gas=0.6465729467 _ERROR_=1 _N_=3760
+NOTE: Mathematical operations could not be performed at the following places. The results of the operations have been set to 
+      missing values.
+      Each place is given by: (Number of times) at (Line):(Column).
+      2 at 171:47   
+NOTE: There were 3760 observations read from the data set WORK.GULF_SORTED.
+NOTE: The data set WORK.GULF_RATIOS has 32 observations and 8 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+179        
+180        proc print data=gulf_ratios label;
+181            label regionname     = "Region"
+182                  protractionname = "Protraction"
+183                  firstoil       = "First Oil"
+184                  lastoil        = "Last Oil"
+185                  firstgas       = "First Gas"
+186                  lastgas        = "Last Gas"
+187                  ratio_oil      = "Oil Ratio"
+188                  ratio_gas      = "Gas Ratio";
+189        run;
+
+NOTE: There were 32 observations read from the data set WORK.GULF_RATIOS.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.04 seconds
+      
+
+190        
+191        /*--------------------------*
+192         | #6 Boxplot Diabetes Data |
+193         *--------------------------*/
+194        proc sgplot data=data.diabetes;
+195            hbox glyhb / category=gender group=frame;
+196            label gender="Gender" frame="Body Frame";
+197            footnote "Glycosylated Hemoglobin by Gender and Body Frame";
+198        run;
+
+NOTE: PROCEDURE SGPLOT used (Total process time):
+      real time           0.12 seconds
+      cpu time            0.07 seconds
+      
+NOTE: There were 403 observations read from the data set DATA.DIABETES.
+
+199        
+200        footnote;
+201        
+202        /*--------------------------*
+203         | #8 Format for Sex        |
+204         *--------------------------*/
+205        proc format;
+5                                                          The SAS System                      Friday, December  5, 2025 05:24:12 PM
+
+206            value sexf
+207                1="Male"
+208                0="Female";
+NOTE: Format SEXF is already on the library WORK.FORMATS.
+NOTE: Format SEXF has been output.
+209        run;
+
+NOTE: PROCEDURE FORMAT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+210        
+211        /*--------------------------*
+212         | #9 Means on Preemies     |
+213         *--------------------------*/
+214        proc means data=data.preemies noprint nway;
+NOTE: Data file DATA.PREEMIES.DATA is in a format that is native to another host, or the file encoding does not match the session 
+      encoding. Cross Environment Data Access will be used, which might require additional CPU resources and might reduce 
+      performance.
+215            class sex;
+216            var bw;
+217            format sex sexf.;
+218            output out=prem_stats mean=mean_bw;
+219        run;
+
+NOTE: There were 30 observations read from the data set DATA.PREEMIES.
+NOTE: The data set WORK.PREM_STATS has 2 observations and 4 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+220        
+221        /*--------------------------*
+222         | #10 Transpose            |
+223         *--------------------------*/
+224        proc transpose data=prem_stats out=prem_t(drop=_name_);
+225            id sex;
+226            var mean_bw;
+227        run;
+
+NOTE: There were 2 observations read from the data set WORK.PREM_STATS.
+NOTE: The data set WORK.PREM_T has 1 observations and 2 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+228        
+229        /*--------------------------*
+230         | #11 Print Transposed     |
+231         *--------------------------*/
+232        proc print data=prem_t noobs;
+233        run;
+
+NOTE: There were 1 observations read from the data set WORK.PREM_T.
+NOTE: PROCEDURE PRINT used (Total process time):
+6                                                          The SAS System                      Friday, December  5, 2025 05:24:12 PM
+
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+234        
+235        /*--------------------------*
+236         | #12 Merge DIM + FACT     |
+237         *--------------------------*/
+238        proc sort data=data.customer_dim out=customer_dim_sorted; by customer_id; run;
+
+NOTE: There were 77 observations read from the data set DATA.CUSTOMER_DIM.
+NOTE: The data set WORK.CUSTOMER_DIM_SORTED has 77 observations and 11 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+239        proc sort data=data.order_fact    out=order_fact_sorted;  by customer_id; run;
+
+NOTE: There were 617 observations read from the data set DATA.ORDER_FACT.
+NOTE: The data set WORK.ORDER_FACT_SORTED has 617 observations and 12 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+240        
+241        data merged;
+242            merge customer_dim_sorted(in=a)
+243                  order_fact_sorted(in=b);
+244            by customer_id;
+245            if a and b;
+246        run;
+
+NOTE: There were 77 observations read from the data set WORK.CUSTOMER_DIM_SORTED.
+NOTE: There were 617 observations read from the data set WORK.ORDER_FACT_SORTED.
+NOTE: The data set WORK.MERGED has 617 observations and 22 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+247        
+248        /*--------------------------*
+249         | #13 Macro Country Report |
+250         *--------------------------*/
+251        %macro countryrep(country=, minval=);
+252        
+253            data &country;
+254                set merged;
+255                where customer_country="&country";
+256                flag = (total_retail_price > &minval);
+257                days = delivery_date - order_date;
+258            run;
+259        
+260            title "Country = &country";
+261        
+262            proc report data=&country nowd;
+7                                                          The SAS System                      Friday, December  5, 2025 05:24:12 PM
+
+263                column flag days quantity total_retail_price;
+264                define flag               / group "Minimum Value";
+265                define days               / group "Days to Delivery";
+266                define quantity           / "Quantity";
+267                define total_retail_price / mean "Mean Price";
+268            run;
+269        
+270            title;
+271        %mend;
+272        
+273        options mprint;
+274        %countryrep(country=DE, minval=75);
+MPRINT(COUNTRYREP):   data DE;
+MPRINT(COUNTRYREP):   set merged;
+MPRINT(COUNTRYREP):   where customer_country="DE";
+MPRINT(COUNTRYREP):   flag = (total_retail_price > 75);
+MPRINT(COUNTRYREP):   days = delivery_date - order_date;
+MPRINT(COUNTRYREP):   run;
+
+NOTE: There were 58 observations read from the data set WORK.MERGED.
+      WHERE customer_country='DE';
+NOTE: The data set WORK.DE has 58 observations and 24 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(COUNTRYREP):   title "Country = DE";
+MPRINT(COUNTRYREP):   proc report data=DE nowd;
+MPRINT(COUNTRYREP):   column flag days quantity total_retail_price;
+MPRINT(COUNTRYREP):   define flag / group "Minimum Value";
+MPRINT(COUNTRYREP):   define days / group "Days to Delivery";
+MPRINT(COUNTRYREP):   define quantity / "Quantity";
+MPRINT(COUNTRYREP):   define total_retail_price / mean "Mean Price";
+MPRINT(COUNTRYREP):   run;
+
+NOTE: There were 58 observations read from the data set WORK.DE.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(COUNTRYREP):   title;
+275        %countryrep(country=AU, minval=200);
+MPRINT(COUNTRYREP):   data AU;
+MPRINT(COUNTRYREP):   set merged;
+MPRINT(COUNTRYREP):   where customer_country="AU";
+MPRINT(COUNTRYREP):   flag = (total_retail_price > 200);
+MPRINT(COUNTRYREP):   days = delivery_date - order_date;
+MPRINT(COUNTRYREP):   run;
+
+NOTE: There were 129 observations read from the data set WORK.MERGED.
+      WHERE customer_country='AU';
+NOTE: The data set WORK.AU has 129 observations and 24 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+8                                                          The SAS System                      Friday, December  5, 2025 05:24:12 PM
+
+
+MPRINT(COUNTRYREP):   title "Country = AU";
+MPRINT(COUNTRYREP):   proc report data=AU nowd;
+MPRINT(COUNTRYREP):   column flag days quantity total_retail_price;
+MPRINT(COUNTRYREP):   define flag / group "Minimum Value";
+MPRINT(COUNTRYREP):   define days / group "Days to Delivery";
+MPRINT(COUNTRYREP):   define quantity / "Quantity";
+MPRINT(COUNTRYREP):   define total_retail_price / mean "Mean Price";
+MPRINT(COUNTRYREP):   run;
+
+NOTE: There were 129 observations read from the data set WORK.AU.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.02 seconds
+      
+
+MPRINT(COUNTRYREP):   title;
+276        %countryrep(country=IL, minval=150);
+MPRINT(COUNTRYREP):   data IL;
+MPRINT(COUNTRYREP):   set merged;
+MPRINT(COUNTRYREP):   where customer_country="IL";
+MPRINT(COUNTRYREP):   flag = (total_retail_price > 150);
+MPRINT(COUNTRYREP):   days = delivery_date - order_date;
+MPRINT(COUNTRYREP):   run;
+
+NOTE: There were 19 observations read from the data set WORK.MERGED.
+      WHERE customer_country='IL';
+NOTE: The data set WORK.IL has 19 observations and 24 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(COUNTRYREP):   title "Country = IL";
+MPRINT(COUNTRYREP):   proc report data=IL nowd;
+MPRINT(COUNTRYREP):   column flag days quantity total_retail_price;
+MPRINT(COUNTRYREP):   define flag / group "Minimum Value";
+MPRINT(COUNTRYREP):   define days / group "Days to Delivery";
+MPRINT(COUNTRYREP):   define quantity / "Quantity";
+MPRINT(COUNTRYREP):   define total_retail_price / mean "Mean Price";
+MPRINT(COUNTRYREP):   run;
+
+NOTE: There were 19 observations read from the data set WORK.IL.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(COUNTRYREP):   title;
+277        
+278        /*--------------------------*
+279         | #15 Fish Transformations |
+280         *--------------------------*/
+281        data fish_edit;
+282            set sashelp.fish;
+283        
+284            /* Shrink lengths */
+285            array lens {*} Length1 Length2 Length3;
+9                                                          The SAS System                      Friday, December  5, 2025 05:24:12 PM
+
+286            do i=1 to dim(lens);
+287                if lens{i} ne . then lens{i} = lens{i} * 0.95;
+288            end;
+289        
+290            /* Height categories */
+291            if height = . then Hcat = "M";
+292            else if height < 13            then Hcat = "H1";
+293            else if 13 <= height < 15      then Hcat = "H2";
+294            else if 15 <= height < 17      then Hcat = "H3";
+295            else if height >= 17           then Hcat = "H4";
+296        
+297            /* Weight categories */
+298            if weight = . then Wcat = "M";
+299            else if weight < 400           then Wcat = "W1";
+300            else if 400 <= weight < 600    then Wcat = "W2";
+301            else if 600 <= weight < 800    then Wcat = "W3";
+302            else if weight >= 800          then Wcat = "W4";
+303        
+304            drop i;
+305        run;
+
+NOTE: There were 159 observations read from the data set SASHELP.FISH.
+NOTE: The data set WORK.FISH_EDIT has 159 observations and 9 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+306        
+307        proc sort data=fish_edit;
+308            by species;
+309        run;
+
+NOTE: There were 159 observations read from the data set WORK.FISH_EDIT.
+NOTE: The data set WORK.FISH_EDIT has 159 observations and 9 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+310        
+311        /*--------------------------*
+312         | #16 Univariate           |
+313         *--------------------------*/
+314        proc univariate data=fish_edit;
+315            where Hcat="H";
+316            by species;
+317            class Wcat;
+318            var Length1 Length2 Length3;
+319            ods select moments extremeobs;
+320        run;
+
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.40 seconds
+      cpu time            0.40 seconds
+      
+
+321        
+10                                                         The SAS System                      Friday, December  5, 2025 05:24:13 PM
+
+322        ods pdf close;
+NOTE: ODS PDF printed 72 pages to /home/u64303804/BIOS511/Output/final_730435794.pdf.
+323        proc printto; run;
+
