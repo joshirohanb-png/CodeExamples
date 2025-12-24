@@ -1,0 +1,369 @@
+---
+title: "BIOS 662"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_document: default
+  df_print: paged
+---
+
+Using a parametric ANOVA model, test whether treatment group is associated with mean trt pda. If it is, determine which treatment groups differ significantly from one another in terms of trt pda. Remember to check assumptions of the model and propose (but do not use) a transformation or alternative approach if the assumptions are not satisfied.
+```{r}
+load("/Users/rohanjoshi/Downloads/finalq2.RData")
+dat = cb
+
+dat$group = as.factor(dat$group)
+
+fit.aov = aov(trt_pda ~ group, data = dat)
+anova(fit.aov)
+
+Levene = function(y, group) {
+  group  = as.factor(group)
+  medians = tapply(y, group, median)
+  resp    = abs(y - medians[group])
+  anova(lm(resp ~ group))[1, 4:5]
+}
+
+Levene(dat$trt_pda, dat$group)
+
+qq = qqnorm(fit.aov$residuals)
+qqline(fit.aov$residuals)
+cor.test(qq$x, qq$y)
+
+par(mfrow = c(2, 2))
+plot(fit.aov)
+par(mfrow = c(1, 1))
+
+
+TukeyHSD(fit.aov, "group")
+pairwise.t.test(dat$trt_pda, dat$group, p.adj = "bonf")
+```
+The ANOVA provides evidence of heterogeneity in mean PDA across the nine treatment groups (p ≈ 0.00039), indicating that at least one group differs from the others. Levene’s test suggests no violation of the equal-variance assumption, and the residual diagnostics do not reveal major departures from normality. Together, these results support the validity of the ANOVA model for comparing group means.
+
+Using the ANOVA model (that is, using contrast and/or estimate statements rather than two-sample tests), test for differences in mean trt pda and, where significant, estimate the mean difference and provide a 95% confidence interval for the true mean difference, for each of the following: (i) active naltrexone versus placebo naltrexone, restricting to those who received CBI; (ii) active naltrexone versus placebo naltrexone, restricting to those who did not receive CBI; (iii) CBI among those not receiving pills (group 9) versus CBI among those receiving pills (groups 5–8). Discuss what the results mean in terms of which treatments to recommend.
+```{r}
+cb$group = factor(cb$group)
+fit.grp = aov(trt_pda ~ group, data = cb)
+
+library(emmeans)
+
+emm.grp = emmeans(fit.grp, "group")
+
+c1 = contrast(
+  emm.grp,
+  list(
+    nalt_vs_placebo_CBI_yes =
+      c("1" = 0,  "2" = 0,  "3" = 0,  "4" = 0,
+        "5" = -0.5, "6" = -0.5,   # placebo naltrexone, CBI yes
+        "7" =  0.5, "8" =  0.5,   # active naltrexone,  CBI yes
+        "9" = 0)                  # no pills
+  )
+)
+
+summary(c1, infer = c(TRUE, TRUE))
+
+
+c2 = contrast(
+  emm.grp,
+  list(
+    nalt_vs_placebo_CBI_no =
+      c("1" = -0.5, "2" = -0.5,
+        "3" =  0.5, "4" =  0.5,
+        "5" = 0, "6" = 0, "7" = 0, "8" = 0, "9" = 0)
+  )
+)
+
+summary(c2, infer = c(TRUE, TRUE))
+
+c3 = contrast(
+  emm.grp,
+  list(
+    CBI_no_pills_vs_pills =
+      c("1" = 0, "2" = 0, "3" = 0, "4" = 0,
+        "5" = -0.25, "6" = -0.25, "7" = -0.25, "8" = -0.25,
+        "9" =  1)
+  )
+)
+
+summary(c3, infer = c(TRUE, TRUE))   # estimate, 95% CI, p-value
+```
+(i) Among participants receiving CBI, the mean difference in PDA between active and placebo naltrexone was small and not statistically significant. The 95% CI includes zero, indicating insufficient evidence for a treatment effect within this subgroup. This suggests that adding naltrexone to CBI does not meaningfully improve abstinent days.
+
+(ii) In the absence of CBI, active naltrexone increased PDA by approximately 7.2 days, with the 95% CI excluding zero. This provides statistically significant evidence of a beneficial effect of naltrexone when behavioral support is not provided. The result indicates a meaningful interaction between medication and counseling availability.
+
+(iii) Participants receiving CBI without pharmacotherapy had substantially lower PDA compared with those receiving CBI plus pills. The estimated 13-day mean difference, with a CI well below zero, indicates notably poorer outcomes for the CBI-only condition. This suggests that behavioral intervention may be less effective without concurrent medication support.
+
+Using a regression model with trt pda as dependent variable, estimate the parameters μ11, μ12, μ21 and μ22 in Table 2, first using just naltrexone and cbi as independent variables and then using naltrexone, cbi and naltrexone*cbi. You do not need to check the assumptions of these regression models. Discuss how the two models differ in terms of the effect of treatment with a combination of (active) naltrexone and CBI.
+```{r}
+table(cb$naltrexone, useNA = "ifany")
+table(cb$cbi,        useNA = "ifany")
+
+cb$naltrexone = factor(dat$naltrexone)
+cb$cbi        = factor(dat$cbi)
+
+## Additive model: trt_pda ~ naltrexone + cbi
+fit_add = lm(trt_pda ~ naltrexone + cbi, data = cb)
+summary(fit_add)
+
+## Estimated μ_ij under additive model
+library(emmeans)
+emm_add = emmeans(fit_add, ~ naltrexone * cbi)
+emm_add   # this gives μ11, μ12, μ21, μ22 for the main-effects model
+
+
+##Interaction model
+
+fit_int = lm(trt_pda ~ naltrexone * cbi, data = cb)
+summary(fit_int)
+
+emm_int = emmeans(fit_int, ~ naltrexone * cbi)
+emm_int   # μ11, μ12, μ21, μ22 allowing interaction
+```
+The additive model assumes that the effects of naltrexone and CBI operate independently, resulting in identical mean differences across combinations. The interaction model, however, indicates that the effect of naltrexone varies depending on whether CBI is present. This pattern supports an interaction, whereby naltrexone has a stronger effect when CBI is absent and little to no effect when CBI is provided.
+
+The manufacturer of acamprosate is concerned that the sample size of this clinical trial was inadequate to provide a fair assessment of the effect of acamprosate. Assuming the true mean effect of acamprosate on trt pda is the same as the observed effect in this study (that is, equal to the estimated mean difference in trt pda between those on active acamprosate and those on placebo acamprosate), how large a sample size would be needed in a two-group study of acamprosate versus placebo to provide 90% power to detect such a difference? Assume the true variance is the average of the variance for those on acamprosate and the variance of those on its placebo. Discuss whether a trial of the size you calculated should be conducted.
+```{r}
+acamdat = subset(cb, !is.na(acamprosate))
+
+acamdat$acamprosate = factor(acamdat$acamprosate,
+                              levels = c(0, 1),
+                              labels = c("placebo", "active"))
+
+tapply(acamdat$trt_pda, acamdat$acamprosate, mean)
+tapply(acamdat$trt_pda, acamdat$acamprosate, var)
+
+mean_active  = mean(acamdat$trt_pda[acamdat$acamprosate == "active"])
+mean_placebo = mean(acamdat$trt_pda[acamdat$acamprosate == "placebo"])
+delta_hat    = mean_active - mean_placebo   # effect size to detect
+
+var_active   = var(acamdat$trt_pda[acamdat$acamprosate == "active"])
+var_placebo  = var(acamdat$trt_pda[acamdat$acamprosate == "placebo"])
+sigma2_hat   = (var_active + var_placebo) / 2
+sigma_hat    = sqrt(sigma2_hat)
+
+ss = power.t.test(delta     = delta_hat,
+                   sd        = sigma_hat,
+                   sig.level = 0.05,
+                   power     = 0.90,
+                   type      = "two.sample",
+                   alternative = "two.sided")
+
+ss
+ceiling(ss$n)
+2 * ceiling(ss$n)
+```
+The extremely large sample size requirement (approximately 4,765 participants per arm) reflects a very small observed effect size relative to the variability in PDA. Although the calculation satisfies the design parameters (α = 0.05, 90% power), the magnitude of the required sample suggests the treatment effect is not practically meaningful. This highlights the limited potential of acamprosate for clinically relevant changes in PDA.
+
+Calculate the relapse rate for those on active naltrexone and then for those on placebo, in both instances restricting to those who did not receive CBI.
+```{r}
+no_cbi = subset(dat, cbi == 0)
+
+no_cbi$naltrexone = factor(no_cbi$naltrexone,
+                            levels = c(0, 1),
+                            labels = c("placebo", "active"))
+
+tab = with(no_cbi, table(naltrexone, relapse))
+tab
+
+relapse_rate = prop.table(tab, margin = 1)
+relapse_rate
+```
+Relapse rates were high in both groups, but somewhat lower among those receiving active naltrexone. The observed difference suggests modest benefit, although relapse remains common regardless of treatment. These proportions indicate that while naltrexone reduces relapse risk, the effect may not be large.
+
+In one graph, plot relapse-free functions (“survival” functions) for active and placebo naltrexone, again restricting to those who did not receive CBI.
+```{r}
+no_cbi = subset(dat, cbi == 0)
+
+no_cbi$naltrexone = factor(no_cbi$naltrexone,
+                            levels = c(0, 1),
+                            labels = c("Placebo", "Active"))
+
+library(survival)
+
+km_fit = survfit(Surv(futime, relapse == 1) ~ naltrexone, data = no_cbi)
+
+plot(km_fit,
+     lty = 1:2,
+     xlab = "Follow-up time (days)",
+     ylab = "Relapse-free probability",
+     mark.time = FALSE)
+```
+The survival curves show separation between treatment groups, with active naltrexone maintaining higher relapse-free survival throughout follow-up. This graphical evidence is consistent with reduced relapse risk under active medication. The pattern visually supports the formal test conducted in part g.
+
+Test whether the relapse-free functions differ between those on active and placebo naltrexone, as before restricting to those who did not receive CBI. Compare the effect of naltrexone on relapse to heavy drinking with that on PDA in part (b)(ii). Are the effects of naltrexone on the two outcomes consistent? 
+```{r}
+no_cbi = subset(cb, cbi == 0)
+
+no_cbi$naltrexone = factor(no_cbi$naltrexone,
+                            levels = c(0, 1),
+                            labels = c("Placebo", "Active"))
+
+library(survival)
+
+logrank_test = survdiff(Surv(futime, relapse == 1) ~ naltrexone,
+                         data = no_cbi)
+
+logrank_test
+```
+The log-rank test yields a statistically significant difference between survival curves (p = 0.03), indicating that relapse times differ by treatment group. Participants receiving active naltrexone tend to relapse later than those on placebo. This reinforces the observed medication effect among individuals without CBI.
+
+Compare the proportions relapsing by 2 weeks (14 days) between those on active and placebo naltrexone, as before restricting to those who did not receive CBI. From associated 95% confidence intervals, determine whether these two proportions differ significantly. How do the two proportions compare at 16 weeks (112 days)?
+```{r}
+no_cbi = subset(dat, cbi == 0)
+
+no_cbi$naltrexone = factor(no_cbi$naltrexone,
+                            levels = c(0, 1),
+                            labels = c("Placebo", "Active"))
+
+relapsed_by = function(time, event, T) {
+  ifelse(time <= T & event == 1, 1, 0)
+}
+
+no_cbi$relapse14 = relapsed_by(no_cbi$futime, no_cbi$relapse, 14)
+
+table14 = table(no_cbi$naltrexone, no_cbi$relapse14)
+table14
+
+prop14 = prop.test(
+  x = c(table14["Active","1"], table14["Placebo","1"]),
+  n = c(sum(table14["Active",]), sum(table14["Placebo",]))
+)
+prop14
+
+no_cbi$relapse112 = relapsed_by(no_cbi$futime, no_cbi$relapse, 112)
+
+table112 = table(no_cbi$naltrexone, no_cbi$relapse112)
+table112
+
+prop112 = prop.test(
+  x = c(table112["Active","1"], table112["Placebo","1"]),
+  n = c(sum(table112["Active",]), sum(table112["Placebo",]))
+)
+prop112
+```
+At 14 days, the relapse proportion was significantly lower for active naltrexone, indicating an early treatment benefit. By 112 days, the difference was no longer statistically significant, suggesting attenuation of the medication effect over time. This pattern implies naltrexone may delay, but not fully prevent, relapse.
+
+Long-term abuse of alcohol can cause liver damage. GGT is a marker of liver function. The distribution of GGT is extremely skewed, so using untransformed GGT as the dependent variable in a linear regression model is unlikely to satisfy the assumptions of such a model. Although it may not be the “optimal” transformation, taking log of GGT works reasonably well. Fit a regression model for log(GGT) with gender, age, bmi01 and base pda as predictors. (You do not need to check the assumptions of this model.) Based on this multiple regression model, give an estimate of the effect of gender on GGT (not on log(GGT)) and an associated 95% confidence interval.
+```{r}
+rm(list = ls())
+
+load("/Users/rohanjoshi/Downloads/finalq2.RData")
+
+table(cb$gender, useNA = "ifany")
+
+cb2 = subset(cb, !is.na(gender))
+
+table(cb2$gender, useNA = "ifany")
+
+fit_ggt = lm(log(ggt) ~ gender + age + bmi01 + base_pda, data = cb2)
+
+summary(fit_ggt)
+
+coefnames = names(coef(fit_ggt))
+coefnames
+```
+The model indicates that males have significantly higher GGT levels than females, with exp(β) ≈ 1.78 implying roughly 78% higher mean GGT after adjustment. Age and BMI were also positively associated with GGT, while baseline PDA showed a small inverse association. These associations align with expected physiological patterns affecting liver enzyme levels.
+
+
+PDA is based on participant self-report (as is relapse to heavy drinking). The investigators are concerned about the accuracy of these self-reported variables. Some participants may be unwilling to admit they have not managed to avoid alcohol. The investigators have a test of recent alcohol consumption that can be used on blood collected at the study visits. The test is too expensive to apply to the whole cohort, so they would like to use it on 80 participants and from this sample estimate the proportion of participants in the cohort who reported their alcohol consumption truthfully. (The test is not completely accurate, so some discrepancies may be because the test is incorrect rather than untruthful reporting.)
+
+There is more concern about accuracy among those who report low (or no) alcohol consumption than among those reporting frequent consumption. Create 4 categories of trt pda using the lower quartile, median and upper quartile, as in the first column of Table 3. For the first column of the table, give your values for the endpoints of the intervals (that is, replace the words “minimum”, “25th percentile”, “median”, “75th percentile” and “maximum” with concrete values). In the second column of the table give the number of participants in the cohort in each category.
+```{r}
+load("/Users/rohanjoshi/Downloads/finalq2.RData")
+dat = cb
+
+qs = quantile(dat$trt_pda, probs = c(0, 0.25, 0.50, 0.75, 1), na.rm = TRUE)
+qs
+
+dat$pda_cat = cut(dat$trt_pda,
+                   breaks = qs,
+                   include.lowest = TRUE,
+                   right = TRUE)
+
+table(dat$pda_cat)
+```
+The quartile-based categories distribute participants fairly evenly across drinking levels, providing balanced strata for subsequent sampling. These cutpoints reflect substantial variability in abstinent days within the cohort. Using these strata facilitates estimation procedures that account for heterogeneous drinking behavior.
+
+Using simple random sampling (that is, ignoring the categories), select 80 members of the cohort. Determine the number of selected participants who are in each category (that is, complete the third column of Table 3). Show your code and list the participants selected.
+```{r}
+load("/Users/rohanjoshi/Downloads/finalq2.RData")
+dat = cb
+
+qs = quantile(dat$trt_pda, probs = c(0, 0.25, 0.50, 0.75, 1), na.rm = TRUE)
+
+dat$pda_cat = cut(dat$trt_pda,
+                   breaks = qs,
+                   include.lowest = TRUE,
+                   right = TRUE)
+
+set.seed(662)   # required for reproducibility
+sample_idx = sample(1:nrow(dat), 80, replace = FALSE)
+
+selected_ids = dat$id[sample_idx]
+
+table(dat$pda_cat[sample_idx])
+
+selected_ids
+```
+A simple random sample of 80 participants yields category counts that approximate the full cohort distribution but include random fluctuation. This sampling approach does not guarantee representation from each stratum, and heavier or lighter drinkers may be slightly over- or under-sampled. The selected individuals form the comparison group for part m.
+
+Now use stratified random sampling to select 20 participants from each trt pda category (that is, stratifying on trt pda category). Complete column 4 of Table 3. Show your code and list the participants selected in each stratum.
+```{r}
+load("/Users/rohanjoshi/Downloads/finalq2.RData")
+dat = cb
+
+qs = quantile(dat$trt_pda, probs = c(0, 0.25, 0.50, 0.75, 1), na.rm = TRUE)
+
+dat$pda_cat = cut(dat$trt_pda,
+                   breaks = qs,
+                   include.lowest = TRUE,
+                   right = TRUE)
+
+table(dat$pda_cat)
+
+set.seed(662)
+strata_samples = lapply(split(dat, dat$pda_cat),
+                         function(df) df[sample(nrow(df), 20, replace = FALSE), ])
+
+sapply(strata_samples, nrow)
+
+lapply(strata_samples, function(df) df$participant)
+```
+Stratified sampling ensures equal numbers of participants from each PDA quartile, improving precision for stratum-specific and weighted estimates. This method intentionally balances representation across drinking levels, unlike simple random sampling. The resulting sample is appropriate for estimating overall reporting accuracy under a stratified design.
+
+Suppose the investigators conducted the test on the sample drawn in (l) and the results are as in the file “finalq2 sample.txt”. There are just two variables, stratum (numbered 1–4 in the order of the rows in the table) and agree (=1 if the result of the test agrees with the participant’s self-reported alcohol consumption; =0 if the test and self-report are discrepant). Use these results to estimate the proportion of participants in the cohort who reported their alcohol consumption truthfully and provide the associated 95% confidence interval.
+```{r}
+load("/Users/rohanjoshi/Downloads/finalq2.RData")
+dat = cb
+
+qs = quantile(dat$trt_pda, probs = c(0, 0.25, 0.50, 0.75, 1), na.rm = TRUE)
+dat$pda_cat = cut(dat$trt_pda,
+                   breaks = qs,
+                   include.lowest = TRUE,
+                   right = TRUE)
+
+N_h = table(dat$pda_cat)
+N_total = sum(N_h)
+w_h = as.numeric(N_h / N_total)
+
+sample_dat = read.table("/Users/rohanjoshi/Downloads/finalq2_sample.txt",
+                         header = TRUE)
+
+colnames(sample_dat) = c("stratum", "agree")
+sample_dat$stratum = factor(sample_dat$stratum, levels = 1:4)
+
+ybar_h = tapply(sample_dat$agree, sample_dat$stratum, mean)
+n_h = as.numeric(table(sample_dat$stratum))
+p_hat = sum(w_h * ybar_h)
+var_hat = sum((w_h^2) * (ybar_h * (1 - ybar_h) / n_h))
+
+se_hat = sqrt(var_hat)
+lower = p_hat - 1.96 * se_hat
+upper = p_hat + 1.96 * se_hat
+
+c(estimate = p_hat, lower = lower, upper = upper)
+```
+The stratified estimator indicates that approximately 84% of participants reported their alcohol use truthfully, with a reasonably tight CI (76%–92%). The weighting scheme accounts for unequal stratum sizes in the full cohort, yielding an unbiased population estimate. This result suggests high overall agreement between biomarker results and self-report.
+
+Discuss whether it is reasonable to report a single estimated proportion for the whole cohort as calculated previously or whether stratum-specific estimates should be reported instead.
+Reporting only the overall proportion may obscure meaningful differences in reporting accuracy across PDA strata, especially if accuracy varies with drinking level. Because drinking behavior is plausibly related to misreporting, stratum-specific estimates provide a more nuanced characterization of the data. The overall estimate is useful as a summary but should ideally be presented alongside stratum-specific results to avoid masking heterogeneity.
